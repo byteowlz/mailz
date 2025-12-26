@@ -1,0 +1,19 @@
+[package]
+name = "mailz-tui"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mailz-tui"
+path = "src/main.rs"
+
+[dependencies]
+mailz-core.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+crossterm.workspace = true
+env_logger.workspace = true
+log.workspace = true
+ratatui.workspace = true
+serde.workspace = true
+tokio.workspace = true

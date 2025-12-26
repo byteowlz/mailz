@@ -1,0 +1,21 @@
+[package]
+name = "mailz-api"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mailz-api"
+path = "src/main.rs"
+
+[dependencies]
+mailz-core.workspace = true
+anyhow.workspace = true
+axum.workspace = true
+clap.workspace = true
+env_logger.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http.workspace = true

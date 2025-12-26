@@ -1,0 +1,20 @@
+[package]
+name = "mailz-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mailz-cli"
+path = "src/main.rs"
+
+[dependencies]
+mailz-core.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+env_logger.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+toml.workspace = true
