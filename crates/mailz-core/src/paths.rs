@@ -73,6 +73,41 @@ impl AppPaths {
             self.state_dir.display()
         );
     }
+
+    /// Database file path within the data directory.
+    pub fn database_file(&self) -> PathBuf {
+        self.data_dir.join("mailz.db")
+    }
+
+    /// Agent identity file path within the state directory.
+    pub fn agent_identity_file(&self) -> PathBuf {
+        self.state_dir.join("agent.json")
+    }
+
+    /// Draft message file path within the state directory.
+    pub fn draft_file(&self) -> PathBuf {
+        self.state_dir.join("draft.json")
+    }
+
+    /// Daemon state file path within the state directory.
+    pub fn daemon_state_file(&self) -> PathBuf {
+        self.state_dir.join("daemon.json")
+    }
+
+    /// Daemon stop request file path within the state directory.
+    pub fn daemon_stop_file(&self) -> PathBuf {
+        self.state_dir.join("daemon.stop")
+    }
+
+    /// Daemon log file path within the state directory.
+    pub fn daemon_log_file(&self) -> PathBuf {
+        self.state_dir.join("daemon.log")
+    }
+
+    /// Admin API key file path within the state directory.
+    pub fn admin_key_file(&self) -> PathBuf {
+        self.state_dir.join("admin.key")
+    }
 }
 
 impl std::fmt::Display for AppPaths {

@@ -10,18 +10,15 @@ use anyhow::Result;
 use clap::{Args, Parser};
 use rmcp::{
     ServerHandler, ServiceExt,
-    model::{Implementation, ServerCapabilities, ServerInfo},
-    tool, tool_router, tool_handler,
     handler::server::wrapper::Parameters,
+    model::{Implementation, ServerCapabilities, ServerInfo},
+    tool, tool_handler, tool_router,
     transport::io::stdio,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use mailz_core::{
-    AppConfig, AppPaths, Storage,
-    CreateAgent, SendMessage, CreateFileReservation,
-};
+use mailz_core::{AppConfig, AppPaths, CreateAgent, CreateFileReservation, SendMessage, Storage};
 
 fn main() {
     if let Err(err) = try_main() {
@@ -200,7 +197,10 @@ impl McpServer {
     where
         F: FnOnce(&Storage) -> Result<R>,
     {
-        let storage = self.storage.lock().map_err(|e| anyhow::anyhow!("lock error: {e}"))?;
+        let storage = self
+            .storage
+            .lock()
+            .map_err(|e| anyhow::anyhow!("lock error: {e}"))?;
         f(&storage)
     }
 }
@@ -208,14 +208,17 @@ impl McpServer {
 #[tool_router]
 impl McpServer {
     /// Creates or ensures a project exists for the given workspace path
-    #[tool(description = "Creates or ensures a project exists for the given workspace path. Returns the project slug.")]
+    #[tool(
+        description = "Creates or ensures a project exists for the given workspace path. Returns the project slug."
+    )]
     fn ensure_project(&self, params: Parameters<EnsureProjectParams>) -> String {
         match self.with_storage(|s| s.ensure_project(&params.0.project_path)) {
             Ok(project) => serde_json::json!({
                 "id": project.id,
                 "slug": project.slug,
                 "path": project.path,
-            }).to_string(),
+            })
+            .to_string(),
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
         }
     }
@@ -225,12 +228,15 @@ impl McpServer {
     fn register_agent(&self, params: Parameters<RegisterAgentParams>) -> String {
         match self.with_storage(|s| {
             let project = s.ensure_project(&params.0.project_path)?;
-            s.register_agent(project.id, &CreateAgent {
-                name: params.0.name.clone(),
-                program: params.0.program.clone(),
-                model: params.0.model.clone(),
-                task_description: params.0.task_description.clone(),
-            })
+            s.register_agent(
+                project.id,
+                &CreateAgent {
+                    name: params.0.name.clone(),
+                    program: params.0.program.clone(),
+                    model: params.0.model.clone(),
+                    task_description: params.0.task_description.clone(),
+                },
+            )
         }) {
             Ok(agent) => serde_json::json!({
                 "id": agent.id,
@@ -238,7 +244,8 @@ impl McpServer {
                 "program": agent.program,
                 "model": agent.model,
                 "task_description": agent.task_description,
-            }).to_string(),
+            })
+            .to_string(),
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
         }
     }
@@ -247,16 +254,22 @@ impl McpServer {
     #[tool(description = "Lists all agents registered in a project.")]
     fn list_agents(&self, params: Parameters<ListAgentsParams>) -> String {
         match self.with_storage(|s| {
-            let project = s.get_project_by_path(&params.0.project_path)?
+            let project = s
+                .get_project_by_path(&params.0.project_path)?
                 .ok_or_else(|| anyhow::anyhow!("project not found"))?;
             s.list_agents(project.id)
         }) {
             Ok(agents) => {
-                let list: Vec<_> = agents.iter().map(|a| serde_json::json!({
-                    "name": a.name,
-                    "program": a.program,
-                    "model": a.model,
-                })).collect();
+                let list: Vec<_> = agents
+                    .iter()
+                    .map(|a| {
+                        serde_json::json!({
+                            "name": a.name,
+                            "program": a.program,
+                            "model": a.model,
+                        })
+                    })
+                    .collect();
                 serde_json::json!({"agents": list}).to_string()
             }
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
@@ -268,23 +281,27 @@ impl McpServer {
     fn send_message(&self, params: Parameters<SendMessageParams>) -> String {
         match self.with_storage(|s| {
             let project = s.ensure_project(&params.0.project_path)?;
-            s.send_message(project.id, &SendMessage {
-                sender_name: params.0.sender_name.clone(),
-                to: params.0.to.clone(),
-                cc: None,
-                bcc: None,
-                subject: params.0.subject.clone(),
-                body: params.0.body.clone(),
-                importance: params.0.importance.as_ref().and_then(|i| i.parse().ok()),
-                ack_required: params.0.ack_required,
-                thread_id: params.0.thread_id.clone(),
-            })
+            s.send_message(
+                project.id,
+                &SendMessage {
+                    sender_name: params.0.sender_name.clone(),
+                    to: params.0.to.clone(),
+                    cc: None,
+                    bcc: None,
+                    subject: params.0.subject.clone(),
+                    body: params.0.body.clone(),
+                    importance: params.0.importance.as_ref().and_then(|i| i.parse().ok()),
+                    ack_required: params.0.ack_required,
+                    thread_id: params.0.thread_id.clone(),
+                },
+            )
         }) {
             Ok(msg) => serde_json::json!({
                 "id": msg.id,
                 "subject": msg.subject,
                 "thread_id": msg.thread_id,
-            }).to_string(),
+            })
+            .to_string(),
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
         }
     }
@@ -293,23 +310,35 @@ impl McpServer {
     #[tool(description = "Retrieves messages for an agent's inbox.")]
     fn fetch_inbox(&self, params: Parameters<FetchInboxParams>) -> String {
         match self.with_storage(|s| {
-            let project = s.get_project_by_path(&params.0.project_path)?
+            let project = s
+                .get_project_by_path(&params.0.project_path)?
                 .ok_or_else(|| anyhow::anyhow!("project not found"))?;
-            s.fetch_inbox(project.id, &params.0.agent_name, params.0.limit.unwrap_or(20))
+            s.fetch_inbox(
+                project.id,
+                &params.0.agent_name,
+                params.0.limit.unwrap_or(20),
+                0,
+                false,
+            )
         }) {
             Ok(messages) => {
-                let list: Vec<_> = messages.iter().map(|m| serde_json::json!({
-                    "id": m.id,
-                    "sender": m.sender,
-                    "subject": m.subject,
-                    "body": m.body,
-                    "importance": format!("{:?}", m.importance),
-                    "thread_id": m.thread_id,
-                    "created_at": m.created_at.to_rfc3339(),
-                    "read_at": m.read_at.map(|t| t.to_rfc3339()),
-                    "ack_required": m.ack_required,
-                    "ack_at": m.ack_at.map(|t| t.to_rfc3339()),
-                })).collect();
+                let list: Vec<_> = messages
+                    .iter()
+                    .map(|m| {
+                        serde_json::json!({
+                            "id": m.id,
+                            "sender": m.sender,
+                            "subject": m.subject,
+                            "body": m.body,
+                            "importance": format!("{:?}", m.importance),
+                            "thread_id": m.thread_id,
+                            "created_at": m.created_at.to_rfc3339(),
+                            "read_at": m.read_at.map(|t| t.to_rfc3339()),
+                            "ack_required": m.ack_required,
+                            "ack_at": m.ack_at.map(|t| t.to_rfc3339()),
+                        })
+                    })
+                    .collect();
                 serde_json::json!({"messages": list, "count": list.len()}).to_string()
             }
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
@@ -317,16 +346,21 @@ impl McpServer {
     }
 
     /// Acknowledges receipt of a message
-    #[tool(description = "Acknowledges receipt of a message. Also marks it as read if not already.")]
+    #[tool(
+        description = "Acknowledges receipt of a message. Also marks it as read if not already."
+    )]
     fn acknowledge_message(&self, params: Parameters<AcknowledgeMessageParams>) -> String {
         match self.with_storage(|s| {
-            let project = s.get_project_by_path(&params.0.project_path)?
+            let project = s
+                .get_project_by_path(&params.0.project_path)?
                 .ok_or_else(|| anyhow::anyhow!("project not found"))?;
-            let agent = s.get_agent_by_name(project.id, &params.0.agent_name)?
+            let agent = s
+                .get_agent_by_name(project.id, &params.0.agent_name)?
                 .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
             s.acknowledge(agent.id, params.0.message_id)
         }) {
-            Ok(()) => serde_json::json!({"acknowledged": true, "message_id": params.0.message_id}).to_string(),
+            Ok(()) => serde_json::json!({"acknowledged": true, "message_id": params.0.message_id})
+                .to_string(),
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
         }
     }
@@ -335,19 +369,25 @@ impl McpServer {
     #[tool(description = "Searches messages using full-text search.")]
     fn search_messages(&self, params: Parameters<SearchMessagesParams>) -> String {
         match self.with_storage(|s| {
-            let project = s.get_project_by_path(&params.0.project_path)?
+            let project = s
+                .get_project_by_path(&params.0.project_path)?
                 .ok_or_else(|| anyhow::anyhow!("project not found"))?;
-            s.search_messages(project.id, &params.0.query, params.0.limit.unwrap_or(20))
+            s.search_messages(project.id, &params.0.query, params.0.limit.unwrap_or(20), 0)
         }) {
             Ok(messages) => {
-                let list: Vec<_> = messages.iter().map(|m| serde_json::json!({
-                    "id": m.id,
-                    "sender": m.sender,
-                    "subject": m.subject,
-                    "body": m.body,
-                    "thread_id": m.thread_id,
-                    "created_at": m.created_at.to_rfc3339(),
-                })).collect();
+                let list: Vec<_> = messages
+                    .iter()
+                    .map(|m| {
+                        serde_json::json!({
+                            "id": m.id,
+                            "sender": m.sender,
+                            "subject": m.subject,
+                            "body": m.body,
+                            "thread_id": m.thread_id,
+                            "created_at": m.created_at.to_rfc3339(),
+                        })
+                    })
+                    .collect();
                 serde_json::json!({"results": list, "count": list.len()}).to_string()
             }
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
@@ -355,35 +395,53 @@ impl McpServer {
     }
 
     /// Creates advisory file reservations to signal editing intent
-    #[tool(description = "Creates advisory file reservations to signal editing intent. Returns granted reservations and any conflicts.")]
+    #[tool(
+        description = "Creates advisory file reservations to signal editing intent. Returns granted reservations and any conflicts."
+    )]
     fn reserve_files(&self, params: Parameters<ReserveFilesParams>) -> String {
         match self.with_storage(|s| {
             let project = s.ensure_project(&params.0.project_path)?;
-            s.create_file_reservations(project.id, &CreateFileReservation {
-                agent_name: params.0.agent_name.clone(),
-                paths: params.0.paths.clone(),
-                ttl_seconds: params.0.ttl_seconds,
-                exclusive: params.0.exclusive,
-                reason: params.0.reason.clone(),
-            })
+            s.create_file_reservations(
+                project.id,
+                &CreateFileReservation {
+                    agent_name: params.0.agent_name.clone(),
+                    paths: params.0.paths.clone(),
+                    ttl_seconds: params.0.ttl_seconds,
+                    exclusive: params.0.exclusive,
+                    reason: params.0.reason.clone(),
+                },
+            )
         }) {
             Ok(result) => {
-                let granted: Vec<_> = result.granted.iter().map(|r| serde_json::json!({
-                    "id": r.id,
-                    "path_pattern": r.path_pattern,
-                    "exclusive": r.exclusive,
-                    "expires_at": r.expires_at.to_rfc3339(),
-                })).collect();
-                let conflicts: Vec<_> = result.conflicts.iter().map(|r| serde_json::json!({
-                    "id": r.id,
-                    "path_pattern": r.path_pattern,
-                    "agent_id": r.agent_id,
-                    "expires_at": r.expires_at.to_rfc3339(),
-                })).collect();
+                let granted: Vec<_> = result
+                    .granted
+                    .iter()
+                    .map(|r| {
+                        serde_json::json!({
+                            "id": r.id,
+                            "path_pattern": r.path_pattern,
+                            "exclusive": r.exclusive,
+                            "expires_at": r.expires_at.to_rfc3339(),
+                        })
+                    })
+                    .collect();
+                let conflicts: Vec<_> = result
+                    .conflicts
+                    .iter()
+                    .map(|r| {
+                        serde_json::json!({
+                            "id": r.id,
+                            "path_pattern": r.path_pattern,
+                            "agent_id": r.agent_id,
+                            "expires_at": r.expires_at.to_rfc3339(),
+                        })
+                    })
+                    .collect();
                 serde_json::json!({
                     "granted": granted,
                     "conflicts": conflicts,
-                }).to_string()
+                })
+                .to_string()
             }
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
         }
@@ -393,7 +451,8 @@ impl McpServer {
     #[tool(description = "Releases file reservations held by an agent.")]
     fn release_reservations(&self, params: Parameters<ReleaseReservationsParams>) -> String {
         match self.with_storage(|s| {
-            let project = s.get_project_by_path(&params.0.project_path)?
+            let project = s
+                .get_project_by_path(&params.0.project_path)?
                 .ok_or_else(|| anyhow::anyhow!("project not found"))?;
             s.release_reservations(project.id, &params.0.agent_name, params.0.paths.as_deref())
         }) {
@@ -406,24 +465,30 @@ impl McpServer {
     #[tool(description = "Lists all active file reservations in a project.")]
     fn list_reservations(&self, params: Parameters<ListReservationsParams>) -> String {
         match self.with_storage(|s| {
-            let project = s.get_project_by_path(&params.0.project_path)?
+            let project = s
+                .get_project_by_path(&params.0.project_path)?
                 .ok_or_else(|| anyhow::anyhow!("project not found"))?;
-            let reservations = s.list_active_reservations(project.id)?;
+            let reservations = s.list_active_reservations(project.id, None, None)?;
             let agents = s.list_agents(project.id)?;
             Ok((reservations, agents))
         }) {
             Ok((reservations, agents)) => {
-                let agent_map: std::collections::HashMap<i64, String> = 
+                let agent_map: std::collections::HashMap<i64, String> =
                     agents.into_iter().map(|a| (a.id, a.name)).collect();
-                
-                let list: Vec<_> = reservations.iter().map(|r| serde_json::json!({
-                    "id": r.id,
-                    "agent": agent_map.get(&r.agent_id).cloned().unwrap_or_default(),
-                    "path_pattern": r.path_pattern,
-                    "exclusive": r.exclusive,
-                    "reason": r.reason,
-                    "expires_at": r.expires_at.to_rfc3339(),
-                })).collect();
+
+                let list: Vec<_> = reservations
+                    .iter()
+                    .map(|r| {
+                        serde_json::json!({
+                            "id": r.id,
+                            "agent": agent_map.get(&r.agent_id).cloned().unwrap_or_default(),
+                            "path_pattern": r.path_pattern,
+                            "exclusive": r.exclusive,
+                            "reason": r.reason,
+                            "expires_at": r.expires_at.to_rfc3339(),
+                        })
+                    })
+                    .collect();
                 serde_json::json!({"reservations": list, "count": list.len()}).to_string()
             }
             Err(e) => serde_json::json!({"error": e.to_string()}).to_string(),
@@ -447,7 +512,8 @@ impl ServerHandler for McpServer {
             instructions: Some(
                 "Agent coordination server. Use ensure_project first, then register_agent, \
                  then use send_message/fetch_inbox for communication and reserve_files for \
-                 coordinating file edits.".to_string()
+                 coordinating file edits."
+                    .to_string(),
             ),
         }
     }

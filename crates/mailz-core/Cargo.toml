@@ -17,3 +17,6 @@ shellexpand.workspace = true
 rusqlite.workspace = true
 chrono.workspace = true
 uuid.workspace = true
+rand.workspace = true
+sha2.workspace = true
+hex.workspace = true

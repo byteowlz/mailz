@@ -9,12 +9,21 @@ pub mod config;
 pub mod error;
 pub mod models;
 pub mod paths;
+pub mod state;
 pub mod storage;
 
-pub use config::{AppConfig, LoggingConfig, PathsConfig, RuntimeConfig};
+pub use config::{
+    ApiConfig, AppConfig, LoggingConfig, MaintenanceConfig, PathsConfig, RuntimeConfig, TuiConfig,
+    WatchConfig,
+};
 pub use error::{CoreError, Result};
 pub use models::*;
 pub use paths::{AppPaths, default_cache_dir};
+pub use state::{
+    AgentIdentity, DaemonState, DraftMessage, clear_daemon_state, clear_draft, load_admin_key,
+    load_agent_identity, load_daemon_state, load_draft, save_admin_key, save_agent_identity,
+    save_daemon_state, save_draft,
+};
 pub use storage::Storage;
 
 /// Application name used for config directories and environment prefix.

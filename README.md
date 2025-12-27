@@ -1,141 +1,149 @@
-# Rust Workspace Template
+# mailz
 
-A batteries-included Rust workspace template with CLI, TUI, MCP server, and HTTP API crates sharing a common core library.
+Agent coordination via mail-style messaging, with CLI, TUI, MCP, and HTTP API interfaces.
+
+## Overview
+
+mailz keeps lightweight, auditable coordination data in a local SQLite database. Agents can send
+messages, request acknowledgements, and reserve files to avoid conflicts. Operators can manage
+projects and agents from a CLI or TUI, and integrate via HTTP API or MCP.
+
+## Install
+
+Build from source:
+
+```bash
+cargo build --release
+```
 
 ## Quick Start
 
-Install the latest stable Rust toolchain (`rustup default stable`), then:
+Initialize config and register an agent:
 
 ```bash
-cargo build
-cargo test
+cargo run -p mailz-cli -- init
+cargo run -p mailz-cli -- project create /path/to/repo --name repo
+cargo run -p mailz-cli -- agent register repo --name "AgentA" --program "cli" --model "gpt"
 ```
 
-Run individual binaries:
+Send a message and check inbox:
 
 ```bash
-cargo run -p mailz-cli -- run
-cargo run -p mailz-tui
-cargo run -p mailz-api -- --port 3000
-cargo run -p mailz-mcp
+cargo run -p mailz-cli -- send repo --from AgentA --to AgentB --subject "Heads up" --body "Working on parser."
+cargo run -p mailz-cli -- inbox repo --agent AgentB
 ```
 
-Scaffold a new project:
-
-```bash
-scripts/new-cli.sh my-app
-```
-
-```powershell
-pwsh scripts/new-cli.ps1 my-app
-```
-
-This creates a new workspace with all crates renamed (e.g., `my-app-core`, `my-app-cli`, etc.).
-
-## Workspace Structure
-
-```
-crates/
-  mailz-core/    # Shared library: config, paths, error types
-  mailz-cli/     # Command-line interface
-  mailz-tui/     # Terminal user interface (ratatui)
-  mailz-mcp/     # Model Context Protocol server
-  mailz-api/     # HTTP API server (axum)
-examples/
-  config.toml   # Example configuration
-scripts/
-  new-cli.sh    # Unix scaffolding script
-  new-cli.ps1   # PowerShell scaffolding script
-```
-
-## Crates
-
-### mailz-core
-
-Shared library providing:
-- `AppConfig` - Configuration loading via `config` crate
-- `AppPaths` - XDG-compliant path resolution
-- Error types and common utilities
-
-### mailz-cli
-
-Command-line interface with:
-- Subcommands: `run`, `init`, `config`, `completions`
-- Global flags: `-q`, `-v`, `--debug`, `--trace`, `--json`, `--yaml`, `--no-color`, `--dry-run`, `--yes`
-- Shell completion generation
-
-```bash
-cargo run -p mailz-cli -- --help
-cargo run -p mailz-cli -- completions bash > target/mailz-cli.bash
-```
-
-### mailz-tui
-
-Terminal UI built with ratatui featuring:
-- Three-pane layout (navigation, list, details)
-- Vim-style navigation (j/k/h/l)
-- Modal help system
+Start the TUI:
 
 ```bash
 cargo run -p mailz-tui
 ```
 
-### mailz-mcp
+Start the API server:
 
-MCP (Model Context Protocol) server exposing tools:
-- `get_profile` - Current configuration profile
-- `echo` - Echo messages
-- `get_runtime_config` - Runtime configuration
+```bash
+cargo run -p mailz-api -- --port 3000
+```
+
+Start the MCP server:
 
 ```bash
 cargo run -p mailz-mcp
 ```
 
-### mailz-api
+## CLI Examples
 
-HTTP API server (axum) with endpoints:
-- `GET /` - Service info
-- `GET /health` - Health check
-- `GET /config` - Current configuration
+Register agents and send messages:
 
 ```bash
-cargo run -p mailz-api -- --port 3000
-curl http://localhost:3000/health
+cargo run -p mailz-cli -- agent register repo --name "AgentB" --program "cursor" --model "gpt"
+cargo run -p mailz-cli -- send repo --from AgentA --to AgentB --subject "Review" --body "Please review parser changes."
 ```
 
-## Configuration
-
-Default config path: `$XDG_CONFIG_HOME/rust-workspace/config.toml`
-
-Override with `--config <path>` or environment variables using the `RUST_WORKSPACE__` prefix:
+Reserve files for coordinated edits:
 
 ```bash
-RUST_WORKSPACE__LOGGING__LEVEL=debug cargo run -p mailz-cli -- run
+cargo run -p mailz-cli -- reserve repo --agent AgentA src/parser.rs --ttl 1200 --reason "Refactor"
+cargo run -p mailz-cli -- reservations repo
 ```
 
-See `examples/config.toml` for all options.
-
-## Development
+Watch for new messages:
 
 ```bash
-cargo fmt                                    # Format code
-cargo clippy --all-targets --all-features   # Lint
-cargo test                                   # Run tests
-cargo build --release                        # Release build
+cargo run -p mailz-cli -- watch
+cargo run -p mailz-cli -- daemon start
+cargo run -p mailz-cli -- daemon status
+cargo run -p mailz-cli -- daemon stop
 ```
 
-## Scaffolding
+## TUI Basics
 
-The `scripts/new-cli.sh` (Unix) and `scripts/new-cli.ps1` (PowerShell) scripts create a new project from this template:
+- `j/k` or arrows to navigate, `c` to compose, `t` for reservations, `g` for directory.
+- `/` to search inbox, `r` to toggle read, `a` to acknowledge.
+- Directory view shows projects (Tab to switch) and agents with unread/total counts.
+
+## API Examples
+
+Admin key is required for management endpoints. Set `api.admin_key` in config or read the auto
+generated key from the state directory.
+
+Create a project and agent:
 
 ```bash
-scripts/new-cli.sh my-app --path ~/projects/my-app
+curl -H "X-API-Key: $MAILZ_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"path":"/path/to/repo","name":"repo"}' \
+  http://localhost:3000/projects
+
+curl -H "X-API-Key: $MAILZ_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"AgentA","program":"api","model":"gpt"}' \
+  http://localhost:3000/projects/1/agents
 ```
 
-This will:
-1. Copy the template to the destination
-2. Rename all crates from `rust-*` to `my-app-*`
-3. Update all references in Cargo.toml, source files, and documentation
-4. Rename crate directories accordingly
+Issue an agent key and use it to read inbox:
 
-Requirements: `python3` for the shell script, PowerShell 7 for the Windows script.
+```bash
+curl -H "X-API-Key: $MAILZ_ADMIN_KEY" http://localhost:3000/agents/1/keys
+
+curl -H "X-API-Key: $MAILZ_AGENT_KEY" http://localhost:3000/agents/1/inbox
+```
+
+Connect to WebSocket updates (requires `websocat`):
+
+```bash
+websocat -H "X-API-Key: $MAILZ_AGENT_KEY" \
+  ws://localhost:3000/ws/1
+```
+
+## MCP Examples
+
+Run the MCP server and call tools such as:
+
+- `ensure_project`
+- `register_agent`
+- `send_message`
+- `fetch_inbox`
+- `reserve_files`
+
+## Configuration Reference
+
+Default config path: `$XDG_CONFIG_HOME/mailz/config.toml`
+
+Key sections (see `examples/config.toml`):
+
+- `logging.level`, `logging.file`
+- `runtime.parallelism`, `runtime.timeout`, `runtime.fail_fast`
+- `paths.data_dir`, `paths.state_dir`
+- `maintenance.gc_interval_seconds`, `maintenance.message_retention_days`
+- `api.admin_key`, `api.rate_limit_per_minute`
+- `tui.poll_interval_seconds`
+- `watch.poll_interval_seconds`
+
+## Agent Coordination Patterns
+
+- Create one project per repo/workspace and register each agent/tool once.
+- Use `reserve` before editing shared files; release when done.
+- Mark read/acknowledge important messages to keep the inbox clean.
+- Use threads (`thread_id`) to group related discussions.
+- Keep agent names consistent across CLI, API, and MCP for clear audit trails.

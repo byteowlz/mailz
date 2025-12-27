@@ -22,3 +22,23 @@ fail_fast = true
 # Uncomment to move persistent data/state to custom directories.
 # data_dir = "$XDG_DATA_HOME/mailz"
 # state_dir = "$XDG_STATE_HOME/mailz"
+
+[maintenance]
+# Background GC interval in seconds.
+# gc_interval_seconds = 300
+# Retention window in days for messages.
+# message_retention_days = 30
+
+[api]
+# Admin API key for bootstrap auth. Leave unset to auto-generate on first run.
+# admin_key = "change-me"
+# Requests per agent per minute.
+# rate_limit_per_minute = 60
+
+[tui]
+# Poll interval for inbox updates.
+# poll_interval_seconds = 5
+
+[watch]
+# Poll interval for `mailz watch`.
+# poll_interval_seconds = 5

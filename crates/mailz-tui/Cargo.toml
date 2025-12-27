@@ -12,6 +12,7 @@ mailz-core.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 crossterm.workspace = true
+chrono.workspace = true
 env_logger.workspace = true
 log.workspace = true
 ratatui.workspace = true

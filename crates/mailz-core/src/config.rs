@@ -17,6 +17,10 @@ pub struct AppConfig {
     pub logging: LoggingConfig,
     pub runtime: RuntimeConfig,
     pub paths: PathsConfig,
+    pub maintenance: MaintenanceConfig,
+    pub api: ApiConfig,
+    pub tui: TuiConfig,
+    pub watch: WatchConfig,
 }
 
 impl AppConfig {
@@ -53,6 +57,11 @@ impl AppConfig {
             .set_default("runtime.parallelism", default_parallelism() as i64)?
             .set_default("runtime.timeout", 60_i64)?
             .set_default("runtime.fail_fast", true)?
+            .set_default("maintenance.gc_interval_seconds", 300_u64)?
+            .set_default("maintenance.message_retention_days", 30_u64)?
+            .set_default("api.rate_limit_per_minute", 60_u64)?
+            .set_default("tui.poll_interval_seconds", 5_u64)?
+            .set_default("watch.poll_interval_seconds", 5_u64)?
             .add_source(
                 File::from(config_file)
                     .format(FileFormat::Toml)
@@ -79,6 +88,10 @@ impl Default for AppConfig {
             logging: LoggingConfig::default(),
             runtime: RuntimeConfig::default(),
             paths: PathsConfig::default(),
+            maintenance: MaintenanceConfig::default(),
+            api: ApiConfig::default(),
+            tui: TuiConfig::default(),
+            watch: WatchConfig::default(),
         }
     }
 }
@@ -125,4 +138,68 @@ impl Default for RuntimeConfig {
 pub struct PathsConfig {
     pub data_dir: Option<String>,
     pub state_dir: Option<String>,
+}
+
+/// Maintenance configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct MaintenanceConfig {
+    pub gc_interval_seconds: u64,
+    pub message_retention_days: u64,
+}
+
+impl Default for MaintenanceConfig {
+    fn default() -> Self {
+        Self {
+            gc_interval_seconds: 300,
+            message_retention_days: 30,
+        }
+    }
+}
+
+/// API server configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ApiConfig {
+    pub admin_key: Option<String>,
+    pub rate_limit_per_minute: u64,
+}
+
+impl Default for ApiConfig {
+    fn default() -> Self {
+        Self {
+            admin_key: None,
+            rate_limit_per_minute: 60,
+        }
+    }
+}
+
+/// TUI configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct TuiConfig {
+    pub poll_interval_seconds: u64,
+}
+
+impl Default for TuiConfig {
+    fn default() -> Self {
+        Self {
+            poll_interval_seconds: 5,
+        }
+    }
+}
+
+/// Watcher configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct WatchConfig {
+    pub poll_interval_seconds: u64,
+}
+
+impl Default for WatchConfig {
+    fn default() -> Self {
+        Self {
+            poll_interval_seconds: 5,
+        }
+    }
 }

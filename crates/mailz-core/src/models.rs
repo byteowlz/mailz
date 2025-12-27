@@ -183,18 +183,43 @@ pub struct MessageView {
     pub ack_at: Option<DateTime<Utc>>,
 }
 
+/// Stored API key metadata.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiKeyRecord {
+    pub id: i64,
+    pub agent_id: i64,
+    pub key_prefix: String,
+    pub created_at: DateTime<Utc>,
+    pub last_used_at: Option<DateTime<Utc>>,
+}
+
+/// Result of issuing a new API key.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiKeyIssued {
+    pub api_key: String,
+    pub record: ApiKeyRecord,
+}
+
+/// Summary of a GC run.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GcSummary {
+    pub expired_reservations: usize,
+    pub deleted_messages: usize,
+    pub message_cutoff: DateTime<Utc>,
+}
+
 /// Generate a memorable agent name (adjective + noun).
 pub fn generate_agent_name() -> String {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
     const ADJECTIVES: &[&str] = &[
-        "Blue", "Green", "Red", "Swift", "Calm", "Bright", "Silent", "Bold",
-        "Wise", "Keen", "Quick", "Sharp", "Cool", "Warm", "Clear", "Deep",
+        "Blue", "Green", "Red", "Swift", "Calm", "Bright", "Silent", "Bold", "Wise", "Keen",
+        "Quick", "Sharp", "Cool", "Warm", "Clear", "Deep",
     ];
     const NOUNS: &[&str] = &[
-        "Lake", "Mountain", "River", "Forest", "Castle", "Tower", "Valley", "Mesa",
-        "Storm", "Cloud", "Star", "Moon", "Eagle", "Wolf", "Bear", "Hawk",
+        "Lake", "Mountain", "River", "Forest", "Castle", "Tower", "Valley", "Mesa", "Storm",
+        "Cloud", "Star", "Moon", "Eagle", "Wolf", "Bear", "Hawk",
     ];
 
     let id = Uuid::new_v4();
@@ -214,7 +239,12 @@ mod tests {
 
     #[test]
     fn test_importance_roundtrip() {
-        for imp in [Importance::Low, Importance::Normal, Importance::High, Importance::Urgent] {
+        for imp in [
+            Importance::Low,
+            Importance::Normal,
+            Importance::High,
+            Importance::Urgent,
+        ] {
             let s = imp.as_str();
             let parsed: Importance = s.parse().unwrap();
             assert_eq!(imp, parsed);

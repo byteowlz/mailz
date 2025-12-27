@@ -68,6 +68,68 @@
         }
       },
       "additionalProperties": false
+    },
+    "maintenance": {
+      "type": "object",
+      "description": "Maintenance and GC settings",
+      "properties": {
+        "gc_interval_seconds": {
+          "type": "integer",
+          "description": "Seconds between background GC runs",
+          "default": 300,
+          "minimum": 1
+        },
+        "message_retention_days": {
+          "type": "integer",
+          "description": "Retention window in days for message cleanup",
+          "default": 30,
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "api": {
+      "type": "object",
+      "description": "API server settings",
+      "properties": {
+        "admin_key": {
+          "type": "string",
+          "description": "Admin API key for bootstrap authentication"
+        },
+        "rate_limit_per_minute": {
+          "type": "integer",
+          "description": "Requests per agent per minute",
+          "default": 60,
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "tui": {
+      "type": "object",
+      "description": "TUI settings",
+      "properties": {
+        "poll_interval_seconds": {
+          "type": "integer",
+          "description": "Seconds between inbox refreshes",
+          "default": 5,
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "watch": {
+      "type": "object",
+      "description": "Watcher settings",
+      "properties": {
+        "poll_interval_seconds": {
+          "type": "integer",
+          "description": "Seconds between watcher polls",
+          "default": 5,
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

@@ -34,6 +34,12 @@ Guidance for coding agents working on this Rust CLI template.
 - Keep README updates concise, emoji-free, and only when requested.
 - Never commit secrets or sensitive paths; scrub logs before surfacing them.
 
+## External Tools
+
+- `bd` for issue tracking and status updates.
+- `byt memory` for project memory and cross-repo knowledge.
+- `just` for workspace build, test, and lint shortcuts.
+
 ## Justfile Commands
 
 This project uses [just](https://github.com/casey/just) as a command runner. Run `just` to see available commands.

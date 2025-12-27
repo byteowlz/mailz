@@ -6,9 +6,8 @@ default:
 
 # === Development ===
 
-# Install all binaries
-install:
-    cargo install --path .
+# Install all binaries (alias for install-all)
+install: install-all
 
 # Install all binaries from workspace
 install-all:
