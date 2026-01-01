@@ -2,6 +2,8 @@
 
 Agent coordination via mail-style messaging, with CLI, TUI, MCP, and HTTP API interfaces.
 
+Heavily inspired by [mcp_agent_mail](https://github.com/Dicklesworthstone/mcp_agent_mail) by Jeffrey Emanuel.
+
 ## Overview
 
 mailz keeps lightweight, auditable coordination data in a local SQLite database. Agents can send
