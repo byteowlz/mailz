@@ -77,20 +77,17 @@ just update       # Update dependencies
 
 Always run `just check-all` before committing significant changes.
 
-## Issue Tracking (bd/beads)
-
-Use `bd` for all issue tracking. Do NOT use markdown TODOs or external trackers.
+## Issue Tracking (trx)
 
 ```bash
-bd ready --json                              # Find unblocked work
-bd create "Title" -t task -p 2 --json        # Create issue (types: bug/feature/task/epic/chore)
-bd update <id> --status in_progress --json   # Claim task
-bd close <id> --reason "Done" --json         # Complete work
+trx ready              # Show unblocked issues
+trx create "Title" -t task -p 2   # Create issue (types: bug/feature/task/epic/chore, priority: 0-4)
+trx update <id> --status in_progress
+trx close <id> -r "Done"
+trx sync               # Commit .trx/ changes
 ```
 
-Priorities: 0=critical, 1=high, 2=medium (default), 3=low, 4=backlog
-
-Always commit `.beads/issues.jsonl` with code changes.
+Priorities: 0=critical, 1=high, 2=medium, 3=low, 4=backlog
 
 ## Memory System (byt/mmry)
 
